@@ -5,6 +5,18 @@ import type { Express, RequestHandler } from 'express';
 import { storage } from './storage';
 import { nanoid } from 'nanoid';
 
+// Extend session type
+declare module 'express-session' {
+  interface SessionData {
+    user: {
+      id: string;
+      username: string;
+      name: string;
+      role: string;
+    };
+  }
+}
+
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   const pgStore = connectPg(session);

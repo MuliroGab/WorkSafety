@@ -137,7 +137,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Dashboard and Analytics
-  app.get("/api/metrics", async (req, res) => {
+  app.get("/api/metrics", isAuthenticated, async (req, res) => {
     try {
       const metrics = await storage.getSafetyMetrics();
       res.json(metrics);
@@ -146,7 +146,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.get("/api/recent-activity", async (req, res) => {
+  app.get("/api/recent-activity", isAuthenticated, async (req, res) => {
     try {
       const incidents = await storage.getRecentIncidents(5);
       const notifications = await storage.getNotifications();
@@ -262,7 +262,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/assessments/:id", async (req, res) => {
+  app.put("/api/assessments/:id", isAuthenticated, async (req, res) => {
     try {
       const id = parseInt(req.params.id);
       const updates = req.body;
@@ -340,7 +340,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Notifications
-  app.get("/api/notifications", async (req, res) => {
+  app.get("/api/notifications", isAuthenticated, async (req, res) => {
     try {
       const { userId } = req.query;
       const notifications = await storage.getNotifications(
@@ -352,7 +352,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/notifications", async (req, res) => {
+  app.post("/api/notifications", isAuthenticated, async (req, res) => {
     try {
       const notificationData = insertNotificationSchema.parse(req.body);
       const notification = await storage.createNotification(notificationData);
