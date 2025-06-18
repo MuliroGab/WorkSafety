@@ -1,22 +1,18 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage";
+import { storage } from "./storage-mongo";
 import { getSession, isAuthenticated, hashPassword, verifyPassword } from "./auth";
 import { 
-  insertTrainingCourseSchema,
-  insertRiskAssessmentSchema,
-  insertSafetyDocumentSchema,
-  insertSafetyIncidentSchema,
-  insertNotificationSchema,
+  createTrainingCourseSchema,
+  createRiskAssessmentSchema,
   updateProgressSchema,
   emergencyAlertSchema,
   loginSchema,
   registerSchema
-} from "@shared/schema";
+} from "@shared/models";
 import multer from "multer";
 import path from "path";
 import { z } from "zod";
-import { nanoid } from "nanoid";
 
 // Extend session type
 declare module 'express-session' {
@@ -147,7 +143,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ message: "User not found" });
       }
       res.json({
-        id: user.id,
+        id: user._id.toString(),
         username: user.username,
         name: user.name,
         role: user.role
