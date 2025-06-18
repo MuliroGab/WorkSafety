@@ -1,13 +1,31 @@
-import { pgTable, text, serial, integer, boolean, timestamp, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, jsonb, varchar, index } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
+// Session storage table for authentication
+export const sessions = pgTable(
+  "sessions",
+  {
+    sid: varchar("sid").primaryKey(),
+    sess: jsonb("sess").notNull(),
+    expire: timestamp("expire").notNull(),
+  },
+  (table) => [index("IDX_session_expire").on(table.expire)],
+);
+
+// User storage table for authentication
 export const users = pgTable("users", {
-  id: serial("id").primaryKey(),
+  id: varchar("id").primaryKey().notNull(),
+  email: varchar("email").unique(),
+  firstName: varchar("first_name"),
+  lastName: varchar("last_name"),
+  profileImageUrl: varchar("profile_image_url"),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   name: text("name").notNull(),
   role: text("role").notNull().default("employee"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
 });
 
 export const trainingCourses = pgTable("training_courses", {
@@ -104,9 +122,12 @@ export const insertNotificationSchema = createInsertSchema(notifications).omit({
   createdAt: true,
 });
 
+// User upsert type for authentication
+export type UpsertUser = typeof users.$inferInsert;
+
 // Types
 export type User = typeof users.$inferSelect;
-export type InsertUser = z.infer<typeof insertTrainingCourseSchema>;
+export type InsertUser = typeof users.$inferInsert;
 
 export type TrainingCourse = typeof trainingCourses.$inferSelect;
 export type InsertTrainingCourse = z.infer<typeof insertTrainingCourseSchema>;
@@ -125,6 +146,23 @@ export type InsertSafetyIncident = z.infer<typeof insertSafetyIncidentSchema>;
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = z.infer<typeof insertNotificationSchema>;
+
+// Authentication schemas
+export const loginSchema = z.object({
+  username: z.string().min(1, "Username is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+});
+
+export const registerSchema = z.object({
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Invalid email address"),
+  name: z.string().min(1, "Name is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string(),
+}).refine(data => data.password === data.confirmPassword, {
+  message: "Passwords don't match",
+  path: ["confirmPassword"],
+});
 
 // Additional schemas for frontend forms
 export const checklistItemSchema = z.object({

@@ -8,6 +8,7 @@ import {
   notifications,
   type User,
   type InsertUser,
+  type UpsertUser,
   type TrainingCourse,
   type InsertTrainingCourse,
   type UserCourseProgress,
@@ -21,10 +22,13 @@ import {
   type Notification,
   type InsertNotification,
 } from "@shared/schema";
+import { db } from "./db";
+import { eq, and } from "drizzle-orm";
 
 export interface IStorage {
-  // Users
-  getUser(id: number): Promise<User | undefined>;
+  // Users (for authentication)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
 
@@ -69,353 +73,190 @@ export interface IStorage {
   }>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User> = new Map();
-  private courses: Map<number, TrainingCourse> = new Map();
-  private progress: Map<string, UserCourseProgress> = new Map();
-  private assessments: Map<number, RiskAssessment> = new Map();
-  private documents: Map<number, SafetyDocument> = new Map();
-  private incidents: Map<number, SafetyIncident> = new Map();
-  private notifications: Map<number, Notification> = new Map();
-  
-  private currentUserId = 1;
-  private currentCourseId = 1;
-  private currentProgressId = 1;
-  private currentAssessmentId = 1;
-  private currentDocumentId = 1;
-  private currentIncidentId = 1;
-  private currentNotificationId = 1;
-
-  constructor() {
-    this.seedData();
-  }
-
-  private seedData() {
-    // Create default user
-    const defaultUser: User = {
-      id: 1,
-      username: "john.smith",
-      password: "password123",
-      name: "John Smith",
-      role: "safety_manager"
-    };
-    this.users.set(1, defaultUser);
-    this.currentUserId = 2;
-
-    // Create sample training courses
-    const courses: TrainingCourse[] = [
-      {
-        id: 1,
-        title: "Fire Safety & Evacuation",
-        description: "Essential fire safety procedures and emergency evacuation protocols",
-        duration: 45,
-        content: "Comprehensive fire safety training content...",
-        isRequired: true,
-        createdAt: new Date()
-      },
-      {
-        id: 2,
-        title: "Equipment Safety Training",
-        description: "Proper use and maintenance of industrial safety equipment",
-        duration: 60,
-        content: "Equipment safety training content...",
-        isRequired: true,
-        createdAt: new Date()
-      },
-      {
-        id: 3,
-        title: "Chemical Handling Safety",
-        description: "Safe handling, storage, and disposal of hazardous chemicals",
-        duration: 90,
-        content: "Chemical handling safety content...",
-        isRequired: false,
-        createdAt: new Date()
-      }
-    ];
-
-    courses.forEach(course => {
-      this.courses.set(course.id, course);
-    });
-    this.currentCourseId = 4;
-
-    // Create sample progress
-    const progressEntries: UserCourseProgress[] = [
-      {
-        id: 1,
-        userId: 1,
-        courseId: 1,
-        progress: 100,
-        completedAt: new Date(),
-        createdAt: new Date()
-      },
-      {
-        id: 2,
-        userId: 1,
-        courseId: 2,
-        progress: 60,
-        completedAt: null,
-        createdAt: new Date()
-      }
-    ];
-
-    progressEntries.forEach(p => {
-      this.progress.set(`${p.userId}-${p.courseId}`, p);
-    });
-    this.currentProgressId = 3;
-
-    // Create sample risk assessments
-    const assessments: RiskAssessment[] = [
-      {
-        id: 1,
-        title: "Daily Safety Inspection",
-        area: "Production Floor A",
-        riskLevel: "medium",
-        status: "pending",
-        assessorId: 1,
-        items: [
-          { id: "1", text: "Emergency exits are clear and accessible", completed: true, required: true },
-          { id: "2", text: "Safety equipment is properly maintained", completed: true, required: true },
-          { id: "3", text: "Hazardous materials are properly stored", completed: false, required: true },
-          { id: "4", text: "First aid supplies are fully stocked", completed: false, required: true }
-        ],
-        completedAt: null,
-        createdAt: new Date()
-      },
-      {
-        id: 2,
-        title: "Equipment Inspection",
-        area: "Warehouse B",
-        riskLevel: "low",
-        status: "completed",
-        assessorId: 1,
-        items: [
-          { id: "1", text: "Equipment maintenance up to date", completed: true, required: true },
-          { id: "2", text: "Safety guards in place", completed: true, required: true }
-        ],
-        completedAt: new Date(),
-        createdAt: new Date()
-      }
-    ];
-
-    assessments.forEach(assessment => {
-      this.assessments.set(assessment.id, assessment);
-    });
-    this.currentAssessmentId = 3;
-
-    // Create sample documents
-    const documents: SafetyDocument[] = [
-      {
-        id: 1,
-        title: "Fire Evacuation Plan v2.1",
-        category: "Emergency Procedures",
-        fileName: "fire-evacuation-plan-v2.1.pdf",
-        filePath: "/documents/fire-evacuation-plan-v2.1.pdf",
-        uploadedBy: 1,
-        createdAt: new Date()
-      },
-      {
-        id: 2,
-        title: "PPE Requirements Guide",
-        category: "Safety Equipment",
-        fileName: "ppe-requirements.pdf",
-        filePath: "/documents/ppe-requirements.pdf",
-        uploadedBy: 1,
-        createdAt: new Date()
-      }
-    ];
-
-    documents.forEach(doc => {
-      this.documents.set(doc.id, doc);
-    });
-    this.currentDocumentId = 3;
-
-    // Create sample incidents
-    const incidents: SafetyIncident[] = [
-      {
-        id: 1,
-        title: "Minor Equipment Malfunction",
-        description: "Conveyor belt safety sensor malfunction",
-        severity: "low",
-        area: "Production Line A",
-        reportedBy: 1,
-        status: "resolved",
-        createdAt: new Date(Date.now() - 86400000) // 1 day ago
-      },
-      {
-        id: 2,
-        title: "Chemical Spill",
-        description: "Small chemical spill in storage area",
-        severity: "medium",
-        area: "Chemical Storage",
-        reportedBy: 1,
-        status: "investigating",
-        createdAt: new Date(Date.now() - 172800000) // 2 days ago
-      }
-    ];
-
-    incidents.forEach(incident => {
-      this.incidents.set(incident.id, incident);
-    });
-    this.currentIncidentId = 3;
-  }
-
-  // User methods
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(user => user.username === username);
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+export class DatabaseStorage implements IStorage {
+  // User operations (for authentication)
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  // Training course methods
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+
+  // Training course operations
   async getAllCourses(): Promise<TrainingCourse[]> {
-    return Array.from(this.courses.values());
+    return await db.select().from(trainingCourses);
   }
 
   async getCourse(id: number): Promise<TrainingCourse | undefined> {
-    return this.courses.get(id);
-  }
-
-  async createCourse(insertCourse: InsertTrainingCourse): Promise<TrainingCourse> {
-    const id = this.currentCourseId++;
-    const course: TrainingCourse = { ...insertCourse, id, createdAt: new Date() };
-    this.courses.set(id, course);
+    const [course] = await db.select().from(trainingCourses).where(eq(trainingCourses.id, id));
     return course;
   }
 
-  // Progress methods
+  async createCourse(insertCourse: InsertTrainingCourse): Promise<TrainingCourse> {
+    const [course] = await db
+      .insert(trainingCourses)
+      .values(insertCourse)
+      .returning();
+    return course;
+  }
+
+  // User progress operations
   async getUserProgress(userId: number): Promise<UserCourseProgress[]> {
-    return Array.from(this.progress.values()).filter(p => p.userId === userId);
+    return await db.select().from(userCourseProgress).where(eq(userCourseProgress.userId, userId));
   }
 
   async getCourseProgress(userId: number, courseId: number): Promise<UserCourseProgress | undefined> {
-    return this.progress.get(`${userId}-${courseId}`);
+    const [progress] = await db
+      .select()
+      .from(userCourseProgress)
+      .where(and(
+        eq(userCourseProgress.userId, userId),
+        eq(userCourseProgress.courseId, courseId)
+      ));
+    return progress;
   }
 
   async updateProgress(userId: number, courseId: number, progressValue: number): Promise<UserCourseProgress> {
-    const key = `${userId}-${courseId}`;
-    let progress = this.progress.get(key);
-    
-    if (!progress) {
-      progress = {
-        id: this.currentProgressId++,
+    const [progress] = await db
+      .insert(userCourseProgress)
+      .values({
         userId,
         courseId,
         progress: progressValue,
         completedAt: progressValue === 100 ? new Date() : null,
-        createdAt: new Date()
-      };
-    } else {
-      progress.progress = progressValue;
-      progress.completedAt = progressValue === 100 ? new Date() : null;
-    }
-    
-    this.progress.set(key, progress);
+      })
+      .onConflictDoUpdate({
+        target: [userCourseProgress.userId, userCourseProgress.courseId],
+        set: {
+          progress: progressValue,
+          completedAt: progressValue === 100 ? new Date() : null,
+        },
+      })
+      .returning();
     return progress;
   }
 
-  // Assessment methods
+  // Risk assessment operations
   async getAllAssessments(): Promise<RiskAssessment[]> {
-    return Array.from(this.assessments.values());
+    return await db.select().from(riskAssessments);
   }
 
   async getAssessment(id: number): Promise<RiskAssessment | undefined> {
-    return this.assessments.get(id);
+    const [assessment] = await db.select().from(riskAssessments).where(eq(riskAssessments.id, id));
+    return assessment;
   }
 
   async createAssessment(insertAssessment: InsertRiskAssessment): Promise<RiskAssessment> {
-    const id = this.currentAssessmentId++;
-    const assessment: RiskAssessment = { 
-      ...insertAssessment, 
-      id, 
-      createdAt: new Date(),
-      completedAt: null 
-    };
-    this.assessments.set(id, assessment);
+    const [assessment] = await db
+      .insert(riskAssessments)
+      .values(insertAssessment)
+      .returning();
     return assessment;
   }
 
   async updateAssessment(id: number, updates: Partial<RiskAssessment>): Promise<RiskAssessment> {
-    const assessment = this.assessments.get(id);
-    if (!assessment) {
-      throw new Error(`Assessment with id ${id} not found`);
-    }
-    
-    const updated = { ...assessment, ...updates };
-    this.assessments.set(id, updated);
-    return updated;
+    const [assessment] = await db
+      .update(riskAssessments)
+      .set(updates)
+      .where(eq(riskAssessments.id, id))
+      .returning();
+    return assessment;
   }
 
-  // Document methods
+  // Document operations
   async getAllDocuments(): Promise<SafetyDocument[]> {
-    return Array.from(this.documents.values());
+    return await db.select().from(safetyDocuments);
   }
 
   async getDocumentsByCategory(category: string): Promise<SafetyDocument[]> {
-    return Array.from(this.documents.values()).filter(doc => doc.category === category);
+    return await db.select().from(safetyDocuments).where(eq(safetyDocuments.category, category));
   }
 
   async createDocument(insertDocument: InsertSafetyDocument): Promise<SafetyDocument> {
-    const id = this.currentDocumentId++;
-    const document: SafetyDocument = { ...insertDocument, id, createdAt: new Date() };
-    this.documents.set(id, document);
+    const [document] = await db
+      .insert(safetyDocuments)
+      .values(insertDocument)
+      .returning();
     return document;
   }
 
   async searchDocuments(query: string): Promise<SafetyDocument[]> {
+    // Note: This is a simple implementation. For production, consider using full-text search
+    const documents = await db.select().from(safetyDocuments);
     const lowercaseQuery = query.toLowerCase();
-    return Array.from(this.documents.values()).filter(doc => 
+    return documents.filter(doc => 
       doc.title.toLowerCase().includes(lowercaseQuery) ||
       doc.category.toLowerCase().includes(lowercaseQuery)
     );
   }
 
-  // Incident methods
+  // Incident operations
   async getAllIncidents(): Promise<SafetyIncident[]> {
-    return Array.from(this.incidents.values());
+    return await db.select().from(safetyIncidents);
   }
 
   async getRecentIncidents(limit = 10): Promise<SafetyIncident[]> {
-    return Array.from(this.incidents.values())
+    const incidents = await db.select().from(safetyIncidents);
+    return incidents
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
       .slice(0, limit);
   }
 
   async createIncident(insertIncident: InsertSafetyIncident): Promise<SafetyIncident> {
-    const id = this.currentIncidentId++;
-    const incident: SafetyIncident = { ...insertIncident, id, createdAt: new Date() };
-    this.incidents.set(id, incident);
+    const [incident] = await db
+      .insert(safetyIncidents)
+      .values(insertIncident)
+      .returning();
     return incident;
   }
 
-  // Notification methods
+  // Notification operations
   async getNotifications(userId?: number): Promise<Notification[]> {
-    return Array.from(this.notifications.values())
+    const notifications = await db.select().from(notifications);
+    return notifications
       .filter(n => !userId || n.userId === userId || n.userId === null)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
   async createNotification(insertNotification: InsertNotification): Promise<Notification> {
-    const id = this.currentNotificationId++;
-    const notification: Notification = { ...insertNotification, id, createdAt: new Date() };
-    this.notifications.set(id, notification);
+    const [notification] = await db
+      .insert(notifications)
+      .values(insertNotification)
+      .returning();
     return notification;
   }
 
   async markNotificationRead(id: number): Promise<void> {
-    const notification = this.notifications.get(id);
-    if (notification) {
-      notification.isRead = true;
-      this.notifications.set(id, notification);
-    }
+    await db
+      .update(notifications)
+      .set({ isRead: true })
+      .where(eq(notifications.id, id));
   }
 
   // Analytics
@@ -428,16 +269,21 @@ export class MemStorage implements IStorage {
     const now = new Date();
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
     
-    const incidentsThisMonth = Array.from(this.incidents.values())
+    const [incidents, progress, assessments] = await Promise.all([
+      db.select().from(safetyIncidents),
+      db.select().from(userCourseProgress),
+      db.select().from(riskAssessments),
+    ]);
+    
+    const incidentsThisMonth = incidents
       .filter(incident => incident.createdAt >= monthStart).length;
     
-    const totalProgress = Array.from(this.progress.values());
-    const completedCourses = totalProgress.filter(p => p.progress === 100).length;
-    const trainingCompletion = totalProgress.length > 0 
-      ? Math.round((completedCourses / totalProgress.length) * 100) 
+    const completedCourses = progress.filter(p => p.progress === 100).length;
+    const trainingCompletion = progress.length > 0 
+      ? Math.round((completedCourses / progress.length) * 100) 
       : 0;
     
-    const riskAssessments = this.assessments.size;
+    const riskAssessmentsCount = assessments.length;
     
     // Calculate safety score based on various factors
     const baseScore = 100;
@@ -449,9 +295,9 @@ export class MemStorage implements IStorage {
       safetyScore,
       incidentsThisMonth,
       trainingCompletion,
-      riskAssessments
+      riskAssessments: riskAssessmentsCount
     };
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
