@@ -105,7 +105,7 @@ export default function DocumentUpload({ onUpload, onClose, isUploading, categor
           <div
             className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
               dragActive 
-                ? "border-primary-blue bg-blue-50" 
+                ? "border-primary-green bg-green-50" 
                 : "border-gray-300 hover:border-gray-400"
             }`}
             onDragEnter={handleDrag}
