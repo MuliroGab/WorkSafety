@@ -5,7 +5,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
-import { apiRequest } from "@/lib/queryClient";
+import { cn } from "@/lib/utils";
 
 const navigationItems = [
   { name: "Dashboard", href: "/dashboard" },
@@ -27,7 +27,11 @@ export default function Navigation() {
   const unreadCount = Array.isArray(notifications) ? notifications.filter((n: any) => !n.isRead).length : 0;
 
   const logoutMutation = useMutation({
-    mutationFn: () => apiRequest("/api/auth/logout", { method: "POST" }),
+    mutationFn: async () => {
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) throw new Error("Logout failed");
+      return response.json();
+    },
     onSuccess: () => {
       queryClient.clear();
       window.location.reload();
@@ -41,33 +45,23 @@ export default function Navigation() {
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
               <div className="relative mr-3">
-                <Shield className="text-primary-green h-8 w-8" />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">+</span>
-                </div>
+                <Shield className="h-8 w-8 text-[#019628]" />
+                <Plus className="h-4 w-4 text-[#019628] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2" />
               </div>
               <h1 className="text-xl font-bold text-gray-900">SafetyFirst</h1>
             </div>
-            <div className="hidden md:block ml-10">
-              <div className="flex space-x-8">
-                {navigationItems.map((item) => {
-                  const isActive = location === item.href || 
-                    (item.href === "/dashboard" && location === "/");
-                  
-                  return (
-                    <Link key={item.name} href={item.href}>
-                      <a
-                        className={`px-1 pb-4 text-sm font-medium border-b-2 transition-colors ${
-                          isActive
-                            ? "text-primary-green border-primary-green"
-                            : "text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300"
-                        }`}
-                      >
-                        {item.name}
-                      </a>
-                    </Link>
-                  );
-                })}
+            <div className="hidden md:block">
+              <div className="ml-10 flex items-baseline space-x-4">
+                {navigationItems.map((item) => (
+                  <Link key={item.name} href={item.href}>
+                    <Button
+                      variant={location === item.href ? "default" : "ghost"}
+                      className={location === item.href ? "bg-[#019628] hover:bg-[#017a20]" : ""}
+                    >
+                      {item.name}
+                    </Button>
+                  </Link>
+                ))}
               </div>
             </div>
           </div>

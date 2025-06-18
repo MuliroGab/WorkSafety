@@ -46,7 +46,7 @@ export async function seedDatabase() {
       title: "Warehouse Safety Inspection",
       area: "Main Warehouse",
       riskLevel: "medium",
-      assessorId: "admin-id",
+      assessorId: 1,
       status: "pending",
       items: [
         { id: "1", text: "Check emergency exits are clear", completed: false, required: true },
@@ -59,7 +59,7 @@ export async function seedDatabase() {
       title: "Office Environmental Check",
       area: "Administrative Offices",
       riskLevel: "low",
-      assessorId: "admin-id",
+      assessorId: 1,
       status: "completed",
       items: [
         { id: "1", text: "Check air quality systems", completed: true, required: true },
