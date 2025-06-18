@@ -61,7 +61,7 @@ export default function NotificationToast() {
       case "warning":
         return <AlertTriangle className="h-5 w-5 text-safety-warning" />;
       default:
-        return <Info className="h-5 w-5 text-primary-blue" />;
+        return <Info className="h-5 w-5 text-primary-green" />;
     }
   };
 
@@ -72,7 +72,7 @@ export default function NotificationToast() {
       case "warning":
         return "border-l-safety-warning bg-yellow-50";
       default:
-        return "border-l-primary-blue bg-blue-50";
+        return "border-l-primary-green bg-green-50";
     }
   };
 

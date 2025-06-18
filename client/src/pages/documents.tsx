@@ -17,8 +17,8 @@ const documentCategories = [
   {
     name: "Safety Equipment",
     icon: Shield,
-    color: "primary-blue",
-    bgColor: "bg-blue-50",
+    color: "primary-green",
+    bgColor: "bg-green-50",
   },
   {
     name: "Compliance",
@@ -123,7 +123,7 @@ export default function Documents() {
             </form>
             <Button 
               onClick={() => setShowUpload(true)}
-              className="bg-primary-blue hover:bg-blue-700"
+              className="bg-primary-green hover:bg-green-700"
             >
               <Upload className="h-4 w-4 mr-2" />
               Upload Document
@@ -192,7 +192,7 @@ export default function Documents() {
                     <Button 
                       variant="ghost" 
                       size="sm" 
-                      className="w-full mt-4 text-primary-blue hover:text-blue-700"
+                      className="w-full mt-4 text-primary-green hover:text-green-700"
                       onClick={() => setSelectedCategory(category.name)}
                     >
                       View All ({categoryDocs.length} documents)

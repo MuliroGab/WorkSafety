@@ -134,7 +134,7 @@ export default function DocumentUpload({ onUpload, onClose, isUploading, categor
                 <Upload className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <p className="text-gray-600 mb-2">
                   Drag and drop your file here, or{" "}
-                  <label className="text-primary-blue hover:text-blue-700 cursor-pointer">
+                  <label className="text-primary-green hover:text-green-700 cursor-pointer">
                     browse
                     <input
                       type="file"
@@ -188,7 +188,7 @@ export default function DocumentUpload({ onUpload, onClose, isUploading, categor
             <Button 
               type="submit" 
               disabled={isUploading || !file || !title || !category}
-              className="bg-primary-blue hover:bg-blue-700"
+              className="bg-primary-green hover:bg-green-700"
             >
               {isUploading ? "Uploading..." : "Upload Document"}
             </Button>

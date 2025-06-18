@@ -46,7 +46,7 @@ export default function TrainingCourseCard({ course, progress, onAction, isUpdat
           size="sm"
           onClick={() => onAction(course.id, "continue")}
           disabled={isUpdating}
-          className="bg-primary-blue hover:bg-blue-700"
+          className="bg-primary-green hover:bg-green-700"
         >
           <Play className="h-4 w-4 mr-2" />
           Continue
@@ -58,7 +58,7 @@ export default function TrainingCourseCard({ course, progress, onAction, isUpdat
           size="sm"
           onClick={() => onAction(course.id, "start")}
           disabled={isUpdating}
-          className="bg-primary-blue hover:bg-blue-700"
+          className="bg-primary-green hover:bg-green-700"
         >
           <Play className="h-4 w-4 mr-2" />
           Start Course
@@ -70,10 +70,10 @@ export default function TrainingCourseCard({ course, progress, onAction, isUpdat
   return (
     <Card className="overflow-hidden">
       {/* Course Image Placeholder */}
-      <div className="h-48 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+      <div className="h-48 bg-gradient-to-br from-green-100 to-green-200 flex items-center justify-center">
         <div className="text-center">
-          <div className="h-16 w-16 bg-primary-blue/20 rounded-full flex items-center justify-center mx-auto mb-2">
-            <Play className="h-8 w-8 text-primary-blue" />
+          <div className="h-16 w-16 bg-primary-green/20 rounded-full flex items-center justify-center mx-auto mb-2">
+            <Play className="h-8 w-8 text-primary-green" />
           </div>
           <p className="text-sm text-gray-600">Training Course</p>
         </div>
