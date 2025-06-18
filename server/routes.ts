@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
+import { getSession, isAuthenticated, hashPassword, verifyPassword } from "./auth";
 import { 
   insertTrainingCourseSchema,
   insertRiskAssessmentSchema,
@@ -8,10 +9,26 @@ import {
   insertSafetyIncidentSchema,
   insertNotificationSchema,
   updateProgressSchema,
-  emergencyAlertSchema
+  emergencyAlertSchema,
+  loginSchema,
+  registerSchema
 } from "@shared/schema";
 import multer from "multer";
 import path from "path";
+import { z } from "zod";
+import { nanoid } from "nanoid";
+
+// Extend session type
+declare module 'express-session' {
+  interface SessionData {
+    user: {
+      id: string;
+      username: string;
+      name: string;
+      role: string;
+    };
+  }
+}
 
 // Configure multer for file uploads
 const upload = multer({
@@ -177,7 +194,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Training Courses
-  app.get("/api/courses", async (req, res) => {
+  app.get("/api/courses", isAuthenticated, async (req, res) => {
     try {
       const courses = await storage.getAllCourses();
       res.json(courses);
@@ -209,7 +226,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // User Progress
-  app.get("/api/users/:userId/progress", async (req, res) => {
+  app.get("/api/users/:userId/progress", isAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const progress = await storage.getUserProgress(userId);
@@ -219,7 +236,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.put("/api/users/:userId/progress", async (req, res) => {
+  app.put("/api/users/:userId/progress", isAuthenticated, async (req, res) => {
     try {
       const userId = parseInt(req.params.userId);
       const { courseId, progress } = updateProgressSchema.parse(req.body);
@@ -231,7 +248,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Risk Assessments
-  app.get("/api/assessments", async (req, res) => {
+  app.get("/api/assessments", isAuthenticated, async (req, res) => {
     try {
       const assessments = await storage.getAllAssessments();
       res.json(assessments);
@@ -274,7 +291,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Safety Documents
-  app.get("/api/documents", async (req, res) => {
+  app.get("/api/documents", isAuthenticated, async (req, res) => {
     try {
       const { category, search } = req.query;
       
@@ -293,7 +310,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post("/api/documents", upload.single('file'), async (req, res) => {
+  app.post("/api/documents", isAuthenticated, upload.single('file'), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "No file uploaded" });
@@ -373,7 +390,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Emergency Alert
-  app.post("/api/emergency", async (req, res) => {
+  app.post("/api/emergency", isAuthenticated, async (req, res) => {
     try {
       const { message, area } = emergencyAlertSchema.parse(req.body);
       
