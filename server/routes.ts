@@ -33,6 +33,108 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Session middleware
+  app.use(getSession());
+
+  // Authentication routes
+  app.post('/api/auth/login', async (req, res) => {
+    try {
+      const { username, password } = loginSchema.parse(req.body);
+      
+      const user = await storage.getUserByUsername(username);
+      if (!user || !await verifyPassword(password, user.password)) {
+        return res.status(401).json({ message: "Invalid credentials" });
+      }
+
+      req.session.user = {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        role: user.role
+      };
+
+      res.json({ 
+        user: {
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          role: user.role
+        }
+      });
+    } catch (error) {
+      console.error("Login error:", error);
+      res.status(400).json({ message: error instanceof z.ZodError ? error.errors : "Login failed" });
+    }
+  });
+
+  app.post('/api/auth/register', async (req, res) => {
+    try {
+      const { username, email, name, password } = registerSchema.parse(req.body);
+      
+      // Check if user already exists
+      const existingUser = await storage.getUserByUsername(username);
+      if (existingUser) {
+        return res.status(400).json({ message: "Username already exists" });
+      }
+
+      const hashedPassword = await hashPassword(password);
+      
+      const user = await storage.createUser({
+        id: nanoid(),
+        username,
+        email,
+        name,
+        password: hashedPassword,
+        role: "employee"
+      });
+
+      req.session.user = {
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        role: user.role
+      };
+
+      res.status(201).json({ 
+        user: {
+          id: user.id,
+          username: user.username,
+          name: user.name,
+          role: user.role
+        }
+      });
+    } catch (error) {
+      console.error("Registration error:", error);
+      res.status(400).json({ message: error instanceof z.ZodError ? error.errors : "Registration failed" });
+    }
+  });
+
+  app.post('/api/auth/logout', (req, res) => {
+    req.session.destroy((err) => {
+      if (err) {
+        return res.status(500).json({ message: "Could not log out" });
+      }
+      res.json({ message: "Logged out successfully" });
+    });
+  });
+
+  app.get('/api/auth/me', isAuthenticated, async (req, res) => {
+    try {
+      const user = await storage.getUser(req.session.user.id);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+      res.json({
+        id: user.id,
+        username: user.username,
+        name: user.name,
+        role: user.role
+      });
+    } catch (error) {
+      console.error("Get user error:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
   
   // Dashboard and Analytics
   app.get("/api/metrics", async (req, res) => {

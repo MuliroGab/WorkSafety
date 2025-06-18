@@ -238,8 +238,8 @@ export class DatabaseStorage implements IStorage {
 
   // Notification operations
   async getNotifications(userId?: number): Promise<Notification[]> {
-    const notifications = await db.select().from(notifications);
-    return notifications
+    const allNotifications = await db.select().from(notifications);
+    return allNotifications
       .filter(n => !userId || n.userId === userId || n.userId === null)
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
