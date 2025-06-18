@@ -13,22 +13,22 @@
   --card-foreground: hsl(20, 14.3%, 4.1%);
   --border: hsl(20, 5.9%, 90%);
   --input: hsl(20, 5.9%, 90%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
+  --primary: hsl(129, 100%, 25%);
+  --primary-foreground: hsl(0, 0%, 100%);
   --secondary: hsl(60, 4.8%, 95.9%);
   --secondary-foreground: hsl(24, 9.8%, 10%);
   --accent: hsl(60, 4.8%, 95.9%);
   --accent-foreground: hsl(24, 9.8%, 10%);
   --destructive: hsl(0, 84.2%, 60.2%);
   --destructive-foreground: hsl(60, 9.1%, 97.8%);
-  --ring: hsl(20, 14.3%, 4.1%);
+  --ring: hsl(129, 100%, 25%);
   --radius: 0.5rem;
 
   /* Safety-specific colors */
-  --safety-green: hsl(122, 45%, 36%);
+  --safety-green: hsl(129, 100%, 25%);
   --safety-warning: hsl(45, 88%, 51%);
   --safety-critical: hsl(0, 76%, 50%);
-  --primary-blue: hsl(207, 90%, 54%);
+  --primary-green: hsl(129, 100%, 25%);
 }
 
 .dark {
@@ -42,22 +42,22 @@
   --card-foreground: hsl(0, 0%, 98%);
   --border: hsl(240, 3.7%, 15.9%);
   --input: hsl(240, 3.7%, 15.9%);
-  --primary: hsl(207, 90%, 54%);
-  --primary-foreground: hsl(211, 100%, 99%);
+  --primary: hsl(129, 100%, 25%);
+  --primary-foreground: hsl(0, 0%, 100%);
   --secondary: hsl(240, 3.7%, 15.9%);
   --secondary-foreground: hsl(0, 0%, 98%);
   --accent: hsl(240, 3.7%, 15.9%);
   --accent-foreground: hsl(0, 0%, 98%);
   --destructive: hsl(0, 62.8%, 30.6%);
   --destructive-foreground: hsl(0, 0%, 98%);
-  --ring: hsl(240, 4.9%, 83.9%);
+  --ring: hsl(129, 100%, 25%);
   --radius: 0.5rem;
 
   /* Safety-specific colors for dark mode */
-  --safety-green: hsl(122, 45%, 45%);
+  --safety-green: hsl(129, 100%, 25%);
   --safety-warning: hsl(45, 88%, 60%);
   --safety-critical: hsl(0, 76%, 60%);
-  --primary-blue: hsl(207, 90%, 60%);
+  --primary-green: hsl(129, 100%, 25%);
 }
 
 @layer base {
@@ -83,8 +83,8 @@
     color: var(--safety-critical);
   }
   
-  .primary-blue {
-    color: var(--primary-blue);
+  .primary-green {
+    color: var(--primary-green);
   }
   
   .bg-safety-green {
@@ -99,8 +99,8 @@
     background-color: var(--safety-critical);
   }
   
-  .bg-primary-blue {
-    background-color: var(--primary-blue);
+  .bg-primary-green {
+    background-color: var(--primary-green);
   }
   
   .border-safety-green {
@@ -115,7 +115,7 @@
     border-color: var(--safety-critical);
   }
   
-  .border-primary-blue {
-    border-color: var(--primary-blue);
+  .border-primary-green {
+    border-color: var(--primary-green);
   }
 }

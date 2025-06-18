@@ -27,7 +27,12 @@ export default function Navigation() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
             <div className="flex-shrink-0 flex items-center">
-              <Shield className="text-primary-blue h-8 w-8 mr-3" />
+              <div className="relative mr-3">
+                <Shield className="text-primary-green h-8 w-8" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">+</span>
+                </div>
+              </div>
               <h1 className="text-xl font-bold text-gray-900">SafetyFirst</h1>
             </div>
             <div className="hidden md:block ml-10">
@@ -41,7 +46,7 @@ export default function Navigation() {
                       <a
                         className={`px-1 pb-4 text-sm font-medium border-b-2 transition-colors ${
                           isActive
-                            ? "text-primary-blue border-primary-blue"
+                            ? "text-primary-green border-primary-green"
                             : "text-gray-500 hover:text-gray-700 border-transparent hover:border-gray-300"
                         }`}
                       >

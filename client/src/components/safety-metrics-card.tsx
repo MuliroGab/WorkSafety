@@ -29,11 +29,11 @@ export default function SafetyMetricsCard({ title, value, icon, trend, color }: 
           text: "text-safety-critical",
           icon: "text-safety-critical"
         };
-      case "primary-blue":
+      case "primary-green":
         return {
-          bg: "bg-blue-50",
-          text: "text-primary-blue",
-          icon: "text-primary-blue"
+          bg: "bg-green-50",
+          text: "text-primary-green",
+          icon: "text-primary-green"
         };
       default:
         return {

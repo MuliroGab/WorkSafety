@@ -63,7 +63,7 @@ export default function Checklists() {
       case "pending":
         return "bg-safety-warning text-white";
       case "in_progress":
-        return "bg-primary-blue text-white";
+        return "bg-primary-green text-white";
       default:
         return "bg-gray-500 text-white";
     }

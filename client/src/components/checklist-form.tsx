@@ -38,7 +38,7 @@ export default function ChecklistForm({ assessment, onUpdate, isUpdating }: Chec
       case "pending":
         return <Badge className="bg-safety-warning text-white">Pending</Badge>;
       case "in_progress":
-        return <Badge className="bg-primary-blue text-white">In Progress</Badge>;
+        return <Badge className="bg-primary-green text-white">In Progress</Badge>;
       default:
         return <Badge variant="secondary">{assessment.status}</Badge>;
     }

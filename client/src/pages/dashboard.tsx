@@ -34,7 +34,7 @@ export default function Dashboard() {
       case "incident":
         return <CircleAlert className="h-5 w-5 text-safety-warning" />;
       case "notification":
-        return <FileText className="h-5 w-5 text-primary-blue" />;
+        return <FileText className="h-5 w-5 text-primary-green" />;
       default:
         return <CheckCircle className="h-5 w-5 text-safety-green" />;
     }
@@ -83,7 +83,7 @@ export default function Dashboard() {
           value={`${metrics?.trainingCompletion || 0}%`}
           icon={<GraduationCap className="h-6 w-6" />}
           trend="↑ 8% from last month"
-          color="primary-blue"
+          color="primary-green"
         />
         <SafetyMetricsCard
           title="Risk Assessments"
