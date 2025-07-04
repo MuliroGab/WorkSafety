@@ -1,6 +1,8 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
+import { mongodb } from "./mongodb";
+import { seedDatabase } from "./seed-mongo";
 
 const app = express();
 app.use(express.json());
@@ -37,6 +39,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Initialize MongoDB connection
+  await mongodb.connect();
+  log("Connected to MongoDB");
+  
+  // Seed the database with initial data
+  await seedDatabase();
+  log("Database seeded");
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

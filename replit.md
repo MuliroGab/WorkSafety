@@ -17,22 +17,22 @@ This is a comprehensive workplace safety management system built with a modern f
 
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript
-- **Database**: PostgreSQL with Neon serverless
-- **ORM**: Drizzle ORM for type-safe database operations
+- **Database**: MongoDB with Mongoose ODM (with memory fallback)
+- **ODM**: Mongoose for MongoDB document operations
 - **Authentication**: Session-based auth with bcrypt password hashing
-- **Session Storage**: PostgreSQL-backed sessions using connect-pg-simple
+- **Session Storage**: MongoDB-backed sessions with memory fallback using connect-mongo
 - **File Uploads**: Multer middleware for document uploads
 - **API**: RESTful API with comprehensive error handling
 
-### Database Schema
-- **Users**: Authentication and user management
-- **Training Courses**: Course content and metadata
-- **User Course Progress**: Training completion tracking
-- **Risk Assessments**: Safety inspection checklists
-- **Safety Documents**: Document storage and categorization
-- **Safety Incidents**: Incident reporting and tracking
-- **Notifications**: Real-time alerts and messaging
-- **Sessions**: Secure session management
+### Database Schema (MongoDB Collections)
+- **Users**: Authentication and user management with string ObjectIds
+- **Training Courses**: Course content and metadata with string ObjectIds
+- **User Course Progress**: Training completion tracking with string ObjectIds
+- **Risk Assessments**: Safety inspection checklists with string ObjectIds
+- **Safety Documents**: Document storage and categorization with string ObjectIds
+- **Safety Incidents**: Incident reporting and tracking with string ObjectIds
+- **Notifications**: Real-time alerts and messaging with string ObjectIds
+- **Sessions**: Secure session management via connect-mongo or memory fallback
 
 ## Key Components
 
@@ -132,4 +132,12 @@ Preferred communication style: Simple, everyday language.
 ## Changelog
 
 Changelog:
-- July 04, 2025. Initial setup
+- July 04, 2025. Initial setup with PostgreSQL and Drizzle ORM
+- July 04, 2025. Migrated from PostgreSQL to MongoDB with Mongoose ODM
+  - Removed PostgreSQL dependencies (drizzle-orm, connect-pg-simple, @neondatabase/serverless)
+  - Added MongoDB dependencies (mongoose, connect-mongo)
+  - Implemented hybrid storage system with memory fallback
+  - Updated all schemas to use string-based ObjectIds instead of integer IDs
+  - Modified authentication system to use MongoDB sessions with memory fallback
+  - Updated frontend imports to use MongoDB models
+  - Removed PostgreSQL configuration files (drizzle.config.ts, server/db.ts, server/storage.ts, server/seed.ts, shared/schema.ts)

@@ -1,8 +1,9 @@
 import bcrypt from 'bcryptjs';
 import session from 'express-session';
-import connectPg from 'connect-pg-simple';
+import MongoStore from 'connect-mongo';
+import MemoryStore from 'memorystore';
 import type { Express, RequestHandler } from 'express';
-import { storage } from './storage';
+import { storage } from './storage-hybrid';
 import { nanoid } from 'nanoid';
 
 // Extend session type
@@ -19,13 +20,23 @@ declare module 'express-session' {
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: true,
-    ttl: sessionTtl,
-    tableName: "sessions",
-  });
+  
+  let sessionStore;
+  try {
+    // Try to use MongoDB store first
+    sessionStore = MongoStore.create({
+      mongoUrl: process.env.MONGODB_URI || 'mongodb://localhost:27017/safety-first',
+      ttl: sessionTtl / 1000, // MongoStore expects TTL in seconds
+      autoRemove: 'native',
+      touchAfter: 24 * 3600, // lazy session update
+    });
+  } catch (error) {
+    // Fall back to memory store if MongoDB is not available
+    const MemStore = MemoryStore(session);
+    sessionStore = new MemStore({
+      checkPeriod: 86400000, // prune expired entries every 24h
+    });
+  }
   
   return session({
     secret: process.env.SESSION_SECRET || 'fallback-secret-key',

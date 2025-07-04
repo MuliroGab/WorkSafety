@@ -10,7 +10,7 @@ import { Shield, Plus } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { registerSchema } from "@shared/schema";
+import { registerSchema } from "@shared/models";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 

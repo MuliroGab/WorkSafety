@@ -23,7 +23,7 @@ class MemoryStorage implements IMongoStorage {
   }
 
   async getUserByUsername(username: string) {
-    for (const [_, user] of this.users) {
+    for (const [_, user] of Array.from(this.users.entries())) {
       if (user.username === username) return user;
     }
     return null;
@@ -44,7 +44,7 @@ class MemoryStorage implements IMongoStorage {
   // Training Courses
   async getAllCourses() {
     const coursesArray: any[] = [];
-    for (const [_, course] of this.courses) {
+    for (const [_, course] of Array.from(this.courses.entries())) {
       coursesArray.push(course);
     }
     return coursesArray.sort((a, b) => 
@@ -76,7 +76,7 @@ class MemoryStorage implements IMongoStorage {
   }
 
   async getCourseProgress(userId: string, courseId: string) {
-    for (const progress of this.progress.values()) {
+    for (const progress of Array.from(this.progress.values())) {
       if (progress.userId === userId && progress.courseId === courseId) {
         return progress;
       }
