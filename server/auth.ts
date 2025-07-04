@@ -17,23 +17,30 @@ declare module 'express-session' {
   }
 }
 
+import { mongodb } from './mongodb';
+
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
   
   let sessionStore;
   
-  try {
-    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/safety-first';
-    sessionStore = MongoStore.create({
-      mongoUrl: mongoUri,
-      ttl: sessionTtl / 1000, // MongoStore expects TTL in seconds
-      autoRemove: 'native',
-      touchAfter: 24 * 3600, // lazy session update
-    });
-    console.log('Using MongoDB session store');
-  } catch (error) {
-    console.warn('MongoDB session store unavailable, using memory store');
-    // Will use default memory store
+  // Only use MongoDB session store if MongoDB is connected
+  if (mongodb.isConnectedToDatabase()) {
+    try {
+      const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/safety-first';
+      sessionStore = MongoStore.create({
+        mongoUrl: mongoUri,
+        ttl: sessionTtl / 1000, // MongoStore expects TTL in seconds
+        autoRemove: 'native',
+        touchAfter: 24 * 3600, // lazy session update
+      });
+      console.log('Using MongoDB session store');
+    } catch (error) {
+      console.warn('MongoDB session store unavailable, using memory store');
+      // Will use default memory store
+    }
+  } else {
+    console.log('Using memory session store - MongoDB not connected');
   }
   
   return session({
