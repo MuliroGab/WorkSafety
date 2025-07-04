@@ -1,17 +1,18 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { storage } from "./storage-hybrid";
+import { storage } from "./storage";
 import { getSession, isAuthenticated, hashPassword, verifyPassword } from "./auth";
 import { 
-  createTrainingCourseSchema,
-  createRiskAssessmentSchema,
-  createSafetyIncidentSchema,
-  createNotificationSchema,
+  insertTrainingCourseSchema,
+  insertRiskAssessmentSchema,
+  insertSafetyDocumentSchema,
+  insertSafetyIncidentSchema,
+  insertNotificationSchema,
   updateProgressSchema,
   emergencyAlertSchema,
   loginSchema,
   registerSchema
-} from "@shared/models";
+} from "@shared/schema";
 import multer from "multer";
 import path from "path";
 import { z } from "zod";
@@ -209,7 +210,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/courses/:id", async (req, res) => {
     try {
-      const course = await storage.getCourse(req.params.id);
+      const course = await storage.getCourse(parseInt(req.params.id));
       if (!course) {
         return res.status(404).json({ message: "Course not found" });
       }
@@ -221,7 +222,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/courses", async (req, res) => {
     try {
-      const courseData = createTrainingCourseSchema.parse(req.body);
+      const courseData = insertTrainingCourseSchema.parse(req.body);
       const course = await storage.createCourse(courseData);
       res.status(201).json(course);
     } catch (error) {
@@ -232,7 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // User Progress
   app.get("/api/users/:userId/progress", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.params.userId;
+      const userId = parseInt(req.params.userId);
       const progress = await storage.getUserProgress(userId);
       res.json(progress);
     } catch (error) {
@@ -242,7 +243,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/users/:userId/progress", isAuthenticated, async (req, res) => {
     try {
-      const userId = req.params.userId;
+      const userId = parseInt(req.params.userId);
       const { courseId, progress } = updateProgressSchema.parse(req.body);
       const updatedProgress = await storage.updateProgress(userId, courseId, progress);
       res.json(updatedProgress);
@@ -263,7 +264,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/assessments/:id", async (req, res) => {
     try {
-      const assessment = await storage.getAssessment(req.params.id);
+      const assessment = await storage.getAssessment(parseInt(req.params.id));
       if (!assessment) {
         return res.status(404).json({ message: "Assessment not found" });
       }
@@ -275,15 +276,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/assessments", async (req, res) => {
     try {
-      const assessmentData = createRiskAssessmentSchema.parse(req.body);
-      const user = req.session?.user;
-      if (!user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      const assessment = await storage.createAssessment({
-        ...assessmentData,
-        assessorId: user.id
-      });
+      const assessmentData = insertRiskAssessmentSchema.parse(req.body);
+      const assessment = await storage.createAssessment(assessmentData);
       res.status(201).json(assessment);
     } catch (error) {
       res.status(400).json({ message: "Invalid assessment data" });
@@ -292,7 +286,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/assessments/:id", isAuthenticated, async (req, res) => {
     try {
-      const id = req.params.id;
+      const id = parseInt(req.params.id);
       const updates = req.body;
       const assessment = await storage.updateAssessment(id, updates);
       res.json(assessment);
@@ -332,17 +326,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Title and category are required" });
       }
 
-      const user = req.session?.user;
-      if (!user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
       const documentData = {
         title,
         category,
+        fileName: req.file.originalname,
         filePath: req.file.path,
-        uploadedBy: user.id,
-        tags: []
+        uploadedBy: 1 // TODO: Get from authenticated user
       };
 
       const document = await storage.createDocument(documentData);
@@ -364,14 +353,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/incidents", async (req, res) => {
     try {
-      const user = req.session?.user;
-      if (!user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-      const incidentData = createSafetyIncidentSchema.parse({
-        ...req.body,
-        reportedBy: user.id
-      });
+      const incidentData = insertSafetyIncidentSchema.parse(req.body);
       const incident = await storage.createIncident(incidentData);
       res.status(201).json(incident);
     } catch (error) {
@@ -384,7 +366,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { userId } = req.query;
       const notifications = await storage.getNotifications(
-        userId ? userId as string : undefined
+        userId ? parseInt(userId as string) : undefined
       );
       res.json(notifications);
     } catch (error) {
@@ -394,7 +376,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/notifications", isAuthenticated, async (req, res) => {
     try {
-      const notificationData = createNotificationSchema.parse(req.body);
+      const notificationData = insertNotificationSchema.parse(req.body);
       const notification = await storage.createNotification(notificationData);
       res.status(201).json(notification);
     } catch (error) {
@@ -404,7 +386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.put("/api/notifications/:id/read", async (req, res) => {
     try {
-      const id = req.params.id;
+      const id = parseInt(req.params.id);
       await storage.markNotificationRead(id);
       res.json({ success: true });
     } catch (error) {
@@ -421,19 +403,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const notification = await storage.createNotification({
         title: "Emergency Alert",
         message: area ? `${message} (Area: ${area})` : message,
-        type: "error", // Use error instead of critical for notifications
-        userId: undefined, // Global notification
+        type: "critical",
+        userId: null, // Global notification
         isRead: false
       });
 
       // Create incident record
-      const user = req.session?.user;
       const incident = await storage.createIncident({
         title: "Emergency Alert Triggered",
         description: message,
         severity: "critical",
         area: area || "Unknown",
-        reportedBy: user?.id || "system", // Use authenticated user or system
+        reportedBy: 1, // TODO: Get from authenticated user
         status: "open"
       });
 

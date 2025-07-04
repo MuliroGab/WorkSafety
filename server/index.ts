@@ -1,8 +1,6 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { mongodb } from "./mongodb";
-import { seedDatabase } from "./seed-mongo";
 
 const app = express();
 app.use(express.json());
@@ -39,16 +37,6 @@ app.use((req, res, next) => {
 });
 
 (async () => {
-  // Initialize MongoDB connection with graceful fallback
-  await mongodb.connect();
-  
-  // Only seed if MongoDB is connected
-  if (mongodb.isConnectedToDatabase()) {
-    await seedDatabase();
-  } else {
-    console.log('Skipping database seeding - MongoDB not available');
-  }
-  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

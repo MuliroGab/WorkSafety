@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs';
 import session from 'express-session';
-import MongoStore from 'connect-mongo';
+import connectPg from 'connect-pg-simple';
 import type { Express, RequestHandler } from 'express';
-import { storage } from './storage-mongo';
+import { storage } from './storage';
 import { nanoid } from 'nanoid';
 
 // Extend session type
@@ -17,35 +17,19 @@ declare module 'express-session' {
   }
 }
 
-import { mongodb } from './mongodb';
-
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  
-  let sessionStore;
-  
-  // Only use MongoDB session store if MongoDB is connected
-  if (mongodb.isConnectedToDatabase()) {
-    try {
-      const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/safety-first';
-      sessionStore = MongoStore.create({
-        mongoUrl: mongoUri,
-        ttl: sessionTtl / 1000, // MongoStore expects TTL in seconds
-        autoRemove: 'native',
-        touchAfter: 24 * 3600, // lazy session update
-      });
-      console.log('Using MongoDB session store');
-    } catch (error) {
-      console.warn('MongoDB session store unavailable, using memory store');
-      // Will use default memory store
-    }
-  } else {
-    console.log('Using memory session store - MongoDB not connected');
-  }
+  const pgStore = connectPg(session);
+  const sessionStore = new pgStore({
+    conString: process.env.DATABASE_URL,
+    createTableIfMissing: true,
+    ttl: sessionTtl,
+    tableName: "sessions",
+  });
   
   return session({
     secret: process.env.SESSION_SECRET || 'fallback-secret-key',
-    store: sessionStore, // undefined will use default memory store
+    store: sessionStore,
     resave: false,
     saveUninitialized: false,
     cookie: {

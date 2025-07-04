@@ -17,22 +17,22 @@ This is a comprehensive workplace safety management system built with a modern f
 
 ### Backend Architecture
 - **Framework**: Express.js with TypeScript
-- **Database**: MongoDB with Mongoose ODM
-- **ORM/ODM**: Mongoose for MongoDB document operations
+- **Database**: PostgreSQL with Neon serverless
+- **ORM**: Drizzle ORM for type-safe database operations
 - **Authentication**: Session-based auth with bcrypt password hashing
-- **Session Storage**: MongoDB-backed sessions using connect-mongo
+- **Session Storage**: PostgreSQL-backed sessions using connect-pg-simple
 - **File Uploads**: Multer middleware for document uploads
 - **API**: RESTful API with comprehensive error handling
 
 ### Database Schema
-- **Users**: Authentication and user management (MongoDB collection)
-- **Training Courses**: Course content and metadata (MongoDB collection)
-- **User Course Progress**: Training completion tracking (MongoDB collection)
-- **Risk Assessments**: Safety inspection checklists (MongoDB collection)
-- **Safety Documents**: Document storage and categorization (MongoDB collection)
-- **Safety Incidents**: Incident reporting and tracking (MongoDB collection)
-- **Notifications**: Real-time alerts and messaging (MongoDB collection)
-- **Sessions**: Secure session management (MongoDB collection via connect-mongo)
+- **Users**: Authentication and user management
+- **Training Courses**: Course content and metadata
+- **User Course Progress**: Training completion tracking
+- **Risk Assessments**: Safety inspection checklists
+- **Safety Documents**: Document storage and categorization
+- **Safety Incidents**: Incident reporting and tracking
+- **Notifications**: Real-time alerts and messaging
+- **Sessions**: Secure session management
 
 ## Key Components
 
