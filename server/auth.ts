@@ -1,8 +1,8 @@
 import bcrypt from 'bcryptjs';
 import session from 'express-session';
-import connectPg from 'connect-pg-simple';
+import MongoStore from 'connect-mongo';
 import type { Express, RequestHandler } from 'express';
-import { storage } from './storage';
+import { storage } from './storage-mongo';
 import { nanoid } from 'nanoid';
 
 // Extend session type
@@ -19,17 +19,26 @@ declare module 'express-session' {
 
 export function getSession() {
   const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
-  const pgStore = connectPg(session);
-  const sessionStore = new pgStore({
-    conString: process.env.DATABASE_URL,
-    createTableIfMissing: true,
-    ttl: sessionTtl,
-    tableName: "sessions",
-  });
+  
+  let sessionStore;
+  
+  try {
+    const mongoUri = process.env.MONGODB_URI || 'mongodb://localhost:27017/safety-first';
+    sessionStore = MongoStore.create({
+      mongoUrl: mongoUri,
+      ttl: sessionTtl / 1000, // MongoStore expects TTL in seconds
+      autoRemove: 'native',
+      touchAfter: 24 * 3600, // lazy session update
+    });
+    console.log('Using MongoDB session store');
+  } catch (error) {
+    console.warn('MongoDB session store unavailable, using memory store');
+    // Will use default memory store
+  }
   
   return session({
     secret: process.env.SESSION_SECRET || 'fallback-secret-key',
-    store: sessionStore,
+    store: sessionStore, // undefined will use default memory store
     resave: false,
     saveUninitialized: false,
     cookie: {
